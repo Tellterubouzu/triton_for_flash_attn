@@ -1,0 +1,713 @@
+{
+  "title": "Triton FlashAttention Course",
+  "goal": "docs -> exercises -> lessons の順に、PyTorch bottleneck analysis から portable FlashAttention Triton kernel design まで学ぶ。",
+  "flow": "Read docs/modules/NN_*.md, solve exercises/NN_*.md, then run lessons/NN_*.py as the answer/check script.",
+  "modules": [
+    {
+      "stage": 0,
+      "slug": "setup_and_sanity",
+      "title": "セットアップ、同期、benchmark の前提",
+      "doc": "docs/modules/00_setup_and_sanity.md",
+      "exercise": "exercises/00_setup_and_sanity.md",
+      "lesson": "lessons/00_setup_and_sanity.py",
+      "reference_docs": [],
+      "new_terms": [
+        "GPU",
+        "CUDA",
+        "ROCm",
+        "Triton",
+        "kernel",
+        "synchronization",
+        "warmup"
+      ]
+    },
+    {
+      "stage": 1,
+      "slug": "gpu_execution_model",
+      "title": "kernel、launch、grid、Triton program、warp",
+      "doc": "docs/modules/01_gpu_execution_model.md",
+      "exercise": "exercises/01_gpu_execution_model.md",
+      "lesson": "lessons/01_gpu_execution_model.py",
+      "reference_docs": [
+        "docs/reference/00_gpu_execution_model.md"
+      ],
+      "new_terms": [
+        "launch",
+        "grid",
+        "thread block",
+        "Triton program instance",
+        "tile",
+        "warp",
+        "SIMT"
+      ]
+    },
+    {
+      "stage": 2,
+      "slug": "warps_sms_occupancy",
+      "title": "SM、warp、occupancy、num_warps",
+      "doc": "docs/modules/02_warps_sms_occupancy.md",
+      "exercise": "exercises/02_warps_sms_occupancy.md",
+      "lesson": "lessons/02_warps_sms_occupancy.py",
+      "reference_docs": [
+        "docs/reference/13_kernel_warp_occupancy.md"
+      ],
+      "new_terms": [
+        "SM",
+        "occupancy",
+        "resident program",
+        "warp scheduler",
+        "register pressure",
+        "num_warps",
+        "num_stages"
+      ]
+    },
+    {
+      "stage": 3,
+      "slug": "memory_hierarchy_and_device_query",
+      "title": "HBM、L2、shared memory、register と device query",
+      "doc": "docs/modules/03_memory_hierarchy_and_device_query.md",
+      "exercise": "exercises/03_memory_hierarchy_and_device_query.md",
+      "lesson": "lessons/03_memory_hierarchy_and_device_query.py",
+      "reference_docs": [
+        "docs/reference/06_gpu_memory_hierarchy_low_level.md",
+        "docs/reference/08_hbm_l2_shared_registers.md"
+      ],
+      "new_terms": [
+        "HBM",
+        "L2 cache",
+        "SRAM",
+        "shared memory",
+        "register file",
+        "bandwidth",
+        "latency"
+      ]
+    },
+    {
+      "stage": 4,
+      "slug": "tensor_addresses_strides_layouts",
+      "title": "Tensor address、storage_offset、stride、layout",
+      "doc": "docs/modules/04_tensor_addresses_strides_layouts.md",
+      "exercise": "exercises/04_tensor_addresses_strides_layouts.md",
+      "lesson": "lessons/04_tensor_addresses_strides_layouts.py",
+      "reference_docs": [
+        "docs/reference/07_addressing_strides_and_layout.md"
+      ],
+      "new_terms": [
+        "pointer",
+        "byte address",
+        "data_ptr",
+        "storage",
+        "storage_offset",
+        "stride",
+        "contiguous"
+      ]
+    },
+    {
+      "stage": 5,
+      "slug": "hbm_bandwidth_and_copy",
+      "title": "HBM copy bandwidth と effective bandwidth",
+      "doc": "docs/modules/05_hbm_bandwidth_and_copy.md",
+      "exercise": "exercises/05_hbm_bandwidth_and_copy.md",
+      "lesson": "lessons/05_hbm_bandwidth_and_copy.py",
+      "reference_docs": [
+        "docs/reference/01_performance_model.md",
+        "docs/reference/06_gpu_memory_hierarchy_low_level.md"
+      ],
+      "new_terms": [
+        "effective bandwidth",
+        "read traffic",
+        "write traffic",
+        "memory-bound",
+        "copy kernel"
+      ]
+    },
+    {
+      "stage": 6,
+      "slug": "coalescing_strides_cache",
+      "title": "coalescing、stride、cache locality",
+      "doc": "docs/modules/06_coalescing_strides_cache.md",
+      "exercise": "exercises/06_coalescing_strides_cache.md",
+      "lesson": "lessons/06_coalescing_strides_cache.py",
+      "reference_docs": [
+        "docs/reference/10_cache_hints_ir_and_profiling.md"
+      ],
+      "new_terms": [
+        "coalescing",
+        "memory transaction",
+        "cache line/sector",
+        "stride access",
+        "cache hit",
+        "locality"
+      ]
+    },
+    {
+      "stage": 7,
+      "slug": "vector_add_first_kernel",
+      "title": "最初の Triton kernel: vector add",
+      "doc": "docs/modules/07_vector_add_first_kernel.md",
+      "exercise": "exercises/07_vector_add_first_kernel.md",
+      "lesson": "lessons/07_vector_add_first_kernel.py",
+      "reference_docs": [
+        "docs/reference/02_triton_programming_model.md"
+      ],
+      "new_terms": [
+        "tl.program_id",
+        "tl.arange",
+        "tl.load",
+        "tl.store",
+        "mask",
+        "BLOCK_SIZE"
+      ]
+    },
+    {
+      "stage": 8,
+      "slug": "elementwise_fusion",
+      "title": "elementwise fusion と intermediate tensor 削減",
+      "doc": "docs/modules/08_elementwise_fusion.md",
+      "exercise": "exercises/08_elementwise_fusion.md",
+      "lesson": "lessons/08_elementwise_fusion.py",
+      "reference_docs": [
+        "docs/reference/01_performance_model.md"
+      ],
+      "new_terms": [
+        "fusion",
+        "intermediate tensor",
+        "arithmetic intensity",
+        "launch overhead"
+      ]
+    },
+    {
+      "stage": 9,
+      "slug": "cache_hints_and_eviction",
+      "title": "cache modifier と eviction hint",
+      "doc": "docs/modules/09_cache_hints_and_eviction.md",
+      "exercise": "exercises/09_cache_hints_and_eviction.md",
+      "lesson": "lessons/09_cache_hints_and_eviction.py",
+      "reference_docs": [
+        "docs/reference/10_cache_hints_ir_and_profiling.md"
+      ],
+      "new_terms": [
+        "cache modifier",
+        "eviction policy",
+        ".ca",
+        ".cg",
+        ".cv",
+        "hint"
+      ]
+    },
+    {
+      "stage": 10,
+      "slug": "block_pointers_boundary_check",
+      "title": "block pointer、boundary_check、tl.advance",
+      "doc": "docs/modules/10_block_pointers_boundary_check.md",
+      "exercise": "exercises/10_block_pointers_boundary_check.md",
+      "lesson": "lessons/10_block_pointers_boundary_check.py",
+      "reference_docs": [
+        "docs/reference/12_block_pointers_tensor_descriptors.md"
+      ],
+      "new_terms": [
+        "block pointer",
+        "tl.make_block_ptr",
+        "boundary_check",
+        "padding_option",
+        "tl.advance",
+        "tensor descriptor"
+      ]
+    },
+    {
+      "stage": 11,
+      "slug": "reductions_and_softmax",
+      "title": "row-wise reduction と stable softmax",
+      "doc": "docs/modules/11_reductions_and_softmax.md",
+      "exercise": "exercises/11_reductions_and_softmax.md",
+      "lesson": "lessons/11_reductions_and_softmax.py",
+      "reference_docs": [
+        "docs/reference/16_numerics_correctness.md"
+      ],
+      "new_terms": [
+        "reduction",
+        "row-wise",
+        "stable softmax",
+        "max trick",
+        "power-of-two block"
+      ]
+    },
+    {
+      "stage": 12,
+      "slug": "numerics_and_correctness",
+      "title": "numerics、dtype、correctness tolerance",
+      "doc": "docs/modules/12_numerics_and_correctness.md",
+      "exercise": "exercises/12_numerics_and_correctness.md",
+      "lesson": "lessons/12_numerics_and_correctness.py",
+      "reference_docs": [
+        "docs/reference/16_numerics_correctness.md"
+      ],
+      "new_terms": [
+        "fp32",
+        "fp16",
+        "bf16",
+        "rounding",
+        "absolute error",
+        "relative error",
+        "NaN/Inf"
+      ]
+    },
+    {
+      "stage": 13,
+      "slug": "tiled_matmul",
+      "title": "tiled matmul と SRAM reuse",
+      "doc": "docs/modules/13_tiled_matmul.md",
+      "exercise": "exercises/13_tiled_matmul.md",
+      "lesson": "lessons/13_tiled_matmul.py",
+      "reference_docs": [
+        "docs/reference/01_performance_model.md"
+      ],
+      "new_terms": [
+        "GEMM",
+        "tile",
+        "K loop",
+        "accumulator",
+        "SRAM reuse",
+        "grouped ordering"
+      ]
+    },
+    {
+      "stage": 14,
+      "slug": "tensor_cores_and_tl_dot",
+      "title": "Tensor Core、MFMA、MMA、tl.dot lowering",
+      "doc": "docs/modules/14_tensor_cores_and_tl_dot.md",
+      "exercise": "exercises/14_tensor_cores_and_tl_dot.md",
+      "lesson": "lessons/14_tensor_cores_and_tl_dot.py",
+      "reference_docs": [
+        "docs/reference/14_tensor_cores_mma_and_tl_dot.md"
+      ],
+      "new_terms": [
+        "Tensor Core",
+        "MMA",
+        "MFMA",
+        "tl.dot",
+        "TF32",
+        "input_precision",
+        "lowering"
+      ]
+    },
+    {
+      "stage": 15,
+      "slug": "layernorm_and_rowwise_norm",
+      "title": "LayerNorm と row-wise normalization",
+      "doc": "docs/modules/15_layernorm_and_rowwise_norm.md",
+      "exercise": "exercises/15_layernorm_and_rowwise_norm.md",
+      "lesson": "lessons/15_layernorm_and_rowwise_norm.py",
+      "reference_docs": [
+        "docs/reference/16_numerics_correctness.md"
+      ],
+      "new_terms": [
+        "LayerNorm",
+        "mean",
+        "variance",
+        "epsilon",
+        "affine",
+        "saved stats"
+      ]
+    },
+    {
+      "stage": 16,
+      "slug": "bottleneck_lab_and_profiler",
+      "title": "PyTorch profiler で bottleneck を選ぶ",
+      "doc": "docs/modules/16_bottleneck_lab_and_profiler.md",
+      "exercise": "exercises/16_bottleneck_lab_and_profiler.md",
+      "lesson": "lessons/16_bottleneck_lab_and_profiler.py",
+      "reference_docs": [
+        "docs/reference/04_bottleneck_workflow.md",
+        "docs/reference/17_profiler_metrics_ncu_rocprof.md"
+      ],
+      "new_terms": [
+        "profiler",
+        "hotspot",
+        "operator",
+        "CUDA/HIP kernel time",
+        "trace",
+        "self time"
+      ]
+    },
+    {
+      "stage": 17,
+      "slug": "torch_compile_and_custom_triton",
+      "title": "torch.compile と custom Triton の境界",
+      "doc": "docs/modules/17_torch_compile_and_custom_triton.md",
+      "exercise": "exercises/17_torch_compile_and_custom_triton.md",
+      "lesson": "lessons/17_torch_compile_and_custom_triton.py",
+      "reference_docs": [
+        "docs/reference/02_triton_programming_model.md"
+      ],
+      "new_terms": [
+        "torch.compile",
+        "graph capture",
+        "Inductor",
+        "custom Triton kernel",
+        "fusion boundary",
+        "fallback"
+      ]
+    },
+    {
+      "stage": 18,
+      "slug": "ir_ptx_sass_inspection",
+      "title": "IR、PTX、SASS inspection",
+      "doc": "docs/modules/18_ir_ptx_sass_inspection.md",
+      "exercise": "exercises/18_ir_ptx_sass_inspection.md",
+      "lesson": "lessons/18_ir_ptx_sass_inspection.py",
+      "reference_docs": [
+        "docs/reference/10_cache_hints_ir_and_profiling.md"
+      ],
+      "new_terms": [
+        "TTIR",
+        "TTGIR",
+        "LLVM IR",
+        "PTX",
+        "SASS",
+        "register spill",
+        "assembly token"
+      ]
+    },
+    {
+      "stage": 19,
+      "slug": "streams_transfers_overlap",
+      "title": "streams、transfers、overlap",
+      "doc": "docs/modules/19_streams_transfers_overlap.md",
+      "exercise": "exercises/19_streams_transfers_overlap.md",
+      "lesson": "lessons/19_streams_transfers_overlap.py",
+      "reference_docs": [
+        "docs/reference/09_memory_transfer_and_allocator.md"
+      ],
+      "new_terms": [
+        "stream",
+        "default stream",
+        "pinned memory",
+        "async copy",
+        "overlap",
+        "event"
+      ]
+    },
+    {
+      "stage": 20,
+      "slug": "allocator_zero_fill_lifetime",
+      "title": "allocator、zero fill、tensor lifetime",
+      "doc": "docs/modules/20_allocator_zero_fill_lifetime.md",
+      "exercise": "exercises/20_allocator_zero_fill_lifetime.md",
+      "lesson": "lessons/20_allocator_zero_fill_lifetime.py",
+      "reference_docs": [
+        "docs/reference/09_memory_transfer_and_allocator.md"
+      ],
+      "new_terms": [
+        "caching allocator",
+        "allocated memory",
+        "reserved memory",
+        "zero fill",
+        "empty_cache",
+        "fragmentation",
+        "tensor lifetime"
+      ]
+    },
+    {
+      "stage": 21,
+      "slug": "attention_pytorch_baselines",
+      "title": "PyTorch attention baseline と materialization",
+      "doc": "docs/modules/21_attention_pytorch_baselines.md",
+      "exercise": "exercises/21_attention_pytorch_baselines.md",
+      "lesson": "lessons/21_attention_pytorch_baselines.py",
+      "reference_docs": [
+        "docs/reference/03_flash_attention_math.md"
+      ],
+      "new_terms": [
+        "Query/Key/Value",
+        "logits",
+        "causal mask",
+        "softmax probability",
+        "SDPA",
+        "materialization"
+      ]
+    },
+    {
+      "stage": 22,
+      "slug": "flash_attention_io_accounting",
+      "title": "FlashAttention IO accounting と online softmax",
+      "doc": "docs/modules/22_flash_attention_io_accounting.md",
+      "exercise": "exercises/22_flash_attention_io_accounting.md",
+      "lesson": "lessons/22_flash_attention_io_accounting.py",
+      "reference_docs": [
+        "docs/reference/11_flash_attention_io_schedule.md"
+      ],
+      "new_terms": [
+        "IO complexity",
+        "online softmax",
+        "m statistic",
+        "l statistic",
+        "output accumulator",
+        "exact attention"
+      ]
+    },
+    {
+      "stage": 23,
+      "slug": "flash_attention_forward_triton",
+      "title": "FlashAttention forward Triton kernel",
+      "doc": "docs/modules/23_flash_attention_forward_triton.md",
+      "exercise": "exercises/23_flash_attention_forward_triton.md",
+      "lesson": "lessons/23_flash_attention_forward_triton.py",
+      "reference_docs": [
+        "docs/reference/11_flash_attention_io_schedule.md",
+        "docs/reference/03_flash_attention_math.md"
+      ],
+      "new_terms": [
+        "BLOCK_M",
+        "BLOCK_N",
+        "BLOCK_D",
+        "causal boundary block",
+        "Q/K/V tile",
+        "normalization"
+      ]
+    },
+    {
+      "stage": 24,
+      "slug": "flash_attention_autotune_portability",
+      "title": "autotune と multi-GPU portability",
+      "doc": "docs/modules/24_flash_attention_autotune_portability.md",
+      "exercise": "exercises/24_flash_attention_autotune_portability.md",
+      "lesson": "lessons/24_flash_attention_autotune_portability.py",
+      "reference_docs": [
+        "docs/reference/05_multi_gpu_portability.md",
+        "docs/reference/18_flash_attention_validation_and_portability.md"
+      ],
+      "new_terms": [
+        "autotune",
+        "config",
+        "meta-parameter",
+        "portability",
+        "architecture-specific tuning"
+      ]
+    },
+    {
+      "stage": 25,
+      "slug": "flash_attention_validation_matrix",
+      "title": "validation matrix と correctness sweep",
+      "doc": "docs/modules/25_flash_attention_validation_matrix.md",
+      "exercise": "exercises/25_flash_attention_validation_matrix.md",
+      "lesson": "lessons/25_flash_attention_validation_matrix.py",
+      "reference_docs": [
+        "docs/reference/18_flash_attention_validation_and_portability.md"
+      ],
+      "new_terms": [
+        "validation matrix",
+        "pass/fail/skip",
+        "shape sweep",
+        "dtype sweep",
+        "determinism"
+      ]
+    },
+    {
+      "stage": 26,
+      "slug": "flash_attention_backward_plan",
+      "title": "FlashAttention backward design",
+      "doc": "docs/modules/26_flash_attention_backward_plan.md",
+      "exercise": "exercises/26_flash_attention_backward_plan.md",
+      "lesson": "lessons/26_flash_attention_backward_plan.py",
+      "reference_docs": [
+        "docs/reference/19_flash_attention_variants_and_production.md"
+      ],
+      "new_terms": [
+        "gradient",
+        "dQ/dK/dV",
+        "recomputation",
+        "saved tensor",
+        "dropout mask",
+        "causal gradient"
+      ]
+    },
+    {
+      "stage": 27,
+      "slug": "ncu_rocprof_workflow",
+      "title": "Nsight Compute / Nsight Systems / rocprof workflow",
+      "doc": "docs/modules/27_ncu_rocprof_workflow.md",
+      "exercise": "exercises/27_ncu_rocprof_workflow.md",
+      "lesson": "lessons/27_ncu_rocprof_workflow.py",
+      "reference_docs": [
+        "docs/reference/17_profiler_metrics_ncu_rocprof.md"
+      ],
+      "new_terms": [
+        "Nsight Compute",
+        "Nsight Systems",
+        "rocprof",
+        "metric",
+        "tensor pipe utilization",
+        "stall reason"
+      ]
+    },
+    {
+      "stage": 28,
+      "slug": "production_kernel_checklist",
+      "title": "production FlashAttention kernel checklist",
+      "doc": "docs/modules/28_production_kernel_checklist.md",
+      "exercise": "exercises/28_production_kernel_checklist.md",
+      "lesson": "lessons/28_production_kernel_checklist.py",
+      "reference_docs": [
+        "docs/reference/20_production_flash_attention_checklist.md",
+        "docs/reference/19_flash_attention_variants_and_production.md"
+      ],
+      "new_terms": [
+        "API contract",
+        "CI matrix",
+        "fallback path",
+        "variable length",
+        "paged KV cache",
+        "GQA/MQA",
+        "version pinning"
+      ]
+    }
+  ],
+  "lessons": [
+    {
+      "stage": 0,
+      "path": "lessons/00_setup_and_sanity.py",
+      "topic": "セットアップ、同期、benchmark の前提"
+    },
+    {
+      "stage": 1,
+      "path": "lessons/01_gpu_execution_model.py",
+      "topic": "kernel、launch、grid、Triton program、warp"
+    },
+    {
+      "stage": 2,
+      "path": "lessons/02_warps_sms_occupancy.py",
+      "topic": "SM、warp、occupancy、num_warps"
+    },
+    {
+      "stage": 3,
+      "path": "lessons/03_memory_hierarchy_and_device_query.py",
+      "topic": "HBM、L2、shared memory、register と device query"
+    },
+    {
+      "stage": 4,
+      "path": "lessons/04_tensor_addresses_strides_layouts.py",
+      "topic": "Tensor address、storage_offset、stride、layout"
+    },
+    {
+      "stage": 5,
+      "path": "lessons/05_hbm_bandwidth_and_copy.py",
+      "topic": "HBM copy bandwidth と effective bandwidth"
+    },
+    {
+      "stage": 6,
+      "path": "lessons/06_coalescing_strides_cache.py",
+      "topic": "coalescing、stride、cache locality"
+    },
+    {
+      "stage": 7,
+      "path": "lessons/07_vector_add_first_kernel.py",
+      "topic": "最初の Triton kernel: vector add"
+    },
+    {
+      "stage": 8,
+      "path": "lessons/08_elementwise_fusion.py",
+      "topic": "elementwise fusion と intermediate tensor 削減"
+    },
+    {
+      "stage": 9,
+      "path": "lessons/09_cache_hints_and_eviction.py",
+      "topic": "cache modifier と eviction hint"
+    },
+    {
+      "stage": 10,
+      "path": "lessons/10_block_pointers_boundary_check.py",
+      "topic": "block pointer、boundary_check、tl.advance"
+    },
+    {
+      "stage": 11,
+      "path": "lessons/11_reductions_and_softmax.py",
+      "topic": "row-wise reduction と stable softmax"
+    },
+    {
+      "stage": 12,
+      "path": "lessons/12_numerics_and_correctness.py",
+      "topic": "numerics、dtype、correctness tolerance"
+    },
+    {
+      "stage": 13,
+      "path": "lessons/13_tiled_matmul.py",
+      "topic": "tiled matmul と SRAM reuse"
+    },
+    {
+      "stage": 14,
+      "path": "lessons/14_tensor_cores_and_tl_dot.py",
+      "topic": "Tensor Core、MFMA、MMA、tl.dot lowering"
+    },
+    {
+      "stage": 15,
+      "path": "lessons/15_layernorm_and_rowwise_norm.py",
+      "topic": "LayerNorm と row-wise normalization"
+    },
+    {
+      "stage": 16,
+      "path": "lessons/16_bottleneck_lab_and_profiler.py",
+      "topic": "PyTorch profiler で bottleneck を選ぶ"
+    },
+    {
+      "stage": 17,
+      "path": "lessons/17_torch_compile_and_custom_triton.py",
+      "topic": "torch.compile と custom Triton の境界"
+    },
+    {
+      "stage": 18,
+      "path": "lessons/18_ir_ptx_sass_inspection.py",
+      "topic": "IR、PTX、SASS inspection"
+    },
+    {
+      "stage": 19,
+      "path": "lessons/19_streams_transfers_overlap.py",
+      "topic": "streams、transfers、overlap"
+    },
+    {
+      "stage": 20,
+      "path": "lessons/20_allocator_zero_fill_lifetime.py",
+      "topic": "allocator、zero fill、tensor lifetime"
+    },
+    {
+      "stage": 21,
+      "path": "lessons/21_attention_pytorch_baselines.py",
+      "topic": "PyTorch attention baseline と materialization"
+    },
+    {
+      "stage": 22,
+      "path": "lessons/22_flash_attention_io_accounting.py",
+      "topic": "FlashAttention IO accounting と online softmax"
+    },
+    {
+      "stage": 23,
+      "path": "lessons/23_flash_attention_forward_triton.py",
+      "topic": "FlashAttention forward Triton kernel"
+    },
+    {
+      "stage": 24,
+      "path": "lessons/24_flash_attention_autotune_portability.py",
+      "topic": "autotune と multi-GPU portability"
+    },
+    {
+      "stage": 25,
+      "path": "lessons/25_flash_attention_validation_matrix.py",
+      "topic": "validation matrix と correctness sweep"
+    },
+    {
+      "stage": 26,
+      "path": "lessons/26_flash_attention_backward_plan.py",
+      "topic": "FlashAttention backward design"
+    },
+    {
+      "stage": 27,
+      "path": "lessons/27_ncu_rocprof_workflow.py",
+      "topic": "Nsight Compute / Nsight Systems / rocprof workflow"
+    },
+    {
+      "stage": 28,
+      "path": "lessons/28_production_kernel_checklist.py",
+      "topic": "production FlashAttention kernel checklist"
+    }
+  ]
+}
